@@ -219,12 +219,23 @@ from the test set and see what the model predicts and why.
 from lime import lime_text
 
 ## select observation
-i = 0
+i = 2
 txt_instance = dtf_test["text"].iloc[i]
 ## check true value and predicted value
+print(dtf_test["text"].iloc[i])
 print("True:", y_test[i], "--> Pred:", predicted[i], "| Prob:", round(np.max(predicted_prob[i]),2))
 ## show explanation
-explainer = lime_text.LimeTextExplainer(class_names=np.unique(y_train))
-explained = explainer.explain_instance(txt_instance, model.predict_proba, num_features=3)
-explained.show_in_notebook(text=txt_instance, predict_proba=False)
+# explainer = lime_text.LimeTextExplainer(class_names=np.unique(y_train))
+# explained = explainer.explain_instance(txt_instance, model.predict_proba, num_features=3)
+# explained.show_in_notebook(text=txt_instance, predict_proba=False)
+
+# Word embedding 
+# In word embedding words of the same context appear together in the corpus
+popular models are Word2vec, GloVe and FastText
+import gensim
+import gensim.downloader as gensim_api
+
+
+
+
 
