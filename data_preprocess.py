@@ -229,13 +229,72 @@ print("True:", y_test[i], "--> Pred:", predicted[i], "| Prob:", round(np.max(pre
 # explained = explainer.explain_instance(txt_instance, model.predict_proba, num_features=3)
 # explained.show_in_notebook(text=txt_instance, predict_proba=False)
 
-# Word embedding 
-# In word embedding words of the same context appear together in the corpus
+'''Word embedding 
+In word embedding words of the same context appear together in the corpus
 popular models are Word2vec, GloVe and FastText
+'''
 import gensim
 import gensim.downloader as gensim_api
 
+# In Python, a pre-trained Word Embedding model can be loaded from genism-data like this:
+# nlp = gensim_api.load("word2vec-google-news-300")
+
+# we can fit our own word2vec on training data corpus woth gensim. 
+# The corpus needs to be transformed into a list of list of n-grams.
+corpus = dtf_train["text_clean"]
+print(corpus.shape)
+## create list of lists of unigrams
+lst_corpus = []
+for string in corpus:
+   lst_words = string.split()
+   lst_grams = [" ".join(lst_words[i:i+1]) 
+               for i in range(0, len(lst_words), 1)]
+   lst_corpus.append(lst_grams)
+
+print(len(lst_corpus))
+print(lst_corpus[0:10])
+## detect bigrams and trigrams
+bigrams_detector = gensim.models.phrases.Phrases(lst_corpus, 
+                 delimiter=" ".encode(), min_count=5, threshold=10)
+bigrams_detector = gensim.models.phrases.Phraser(bigrams_detector)
+trigrams_detector = gensim.models.phrases.Phrases(bigrams_detector[lst_corpus], 
+            delimiter=" ".encode(), min_count=5, threshold=10)
+trigrams_detector = gensim.models.phrases.Phraser(trigrams_detector)
+
+'''to fit word2vec specify
+target size of the word vectors (eg 300)
+the window - the max distance between the current and predicted word within a sentence
+skip grams sg =1
+'''
+## fit w2v
+nlp = gensim.models.word2vec.Word2Vec(lst_corpus, size=300,   
+            window=8, min_count=1, sg=1, iter=30)
 
 
+## for deep learning
+from tensorflow.keras import models, layers, preprocessing as kprocessing
+from tensorflow.keras import backend as K
+'''
+this word embedding is useful in predicting the news category.
+this word vectors can be used in neural network as weights 
+transform the corpus into padded sequences of word ids to get a feature matrix.
+create an embedding matrix so that that the vector of the word with id N is located in the Nth row
+build  a neural network with an embedding layer that weighs every word in the sequence with the
+corresponding vector
+'''
+# transform the corpus to a list of sequences
+## tokenize text
+tokenizer = kprocessing.text.Tokenizer(lower=True, split=' ', 
+                     oov_token="NaN", 
+                     filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n')
+tokenizer.fit_on_texts(lst_corpus)
+dic_vocabulary = tokenizer.word_index
+## create sequence
+lst_text2seq= tokenizer.texts_to_sequences(lst_corpus)
+## padding sequence
+X_train = kprocessing.sequence.pad_sequences(lst_text2seq, 
+                    maxlen=15, padding="post", truncating="post")
 
-
+print(X_train.shape)
+sns.heatmap(X_train==0, vmin=0, vmax=1, cbar=False)
+plt.show()
